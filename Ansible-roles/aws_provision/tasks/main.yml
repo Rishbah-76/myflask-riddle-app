@@ -1,0 +1,46 @@
+---
+# tasks file for aws_provision
+- ec2:
+        region: ap-south-1
+        image: ami-0bcf5425cdc1d8a85
+        instance_type: t2.micro
+        vpc_subnet_id: subnet-a9cdc4c1
+        group_id: sg-0864bc0df6632857b
+        key_name: trial4
+	instance_tags:
+                Name: MasterNode
+        aws_access_key:  AKIARHABAWTWXZ4535GL 
+        aws_secret_key: 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
+        assign_public_ip: yes
+        wait: yes
+  register: x1
+- blockinfile:
+        path: "/root/ip.txt"
+        marker: ""
+        block: |
+                   [master]
+                   {{ item.public_ip }} ansible_user=ec2-user ansible_ssh_private_key_file=/trial4.pem ansible_connection=ssh
+  loop: "{{ x1.instances }}"
+- ec2:
+        region: ap-south-1
+        image: ami-0bcf5425cdc1d8a85
+        instance_type: t2.micro
+        vpc_subnet_id: subnet-a9cdc4c1
+        group_id: sg-0864bc0df6632857b
+        key_name: trial4
+        instance_tags:
+                Name: workerNode
+        aws_access_key: AKIARHABAWTWXZ4535GL
+        aws_secret_key: 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
+        assign_public_ip: yes
+        wait: yes
+        count: "{{ count_slaves }}" 
+  register: x2
+- blockinfile:
+        path: "/root/ip.txt"
+        marker: ""
+        block: |
+                   [slaves]
+                   {{ item.public_ip }} ansible_user=ec2-user ansible_ssh_private_key_file=/trial4.pem ansible_connection=ssh
+  loop: "{{ x2.instances }}"
+

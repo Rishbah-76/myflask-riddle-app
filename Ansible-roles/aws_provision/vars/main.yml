@@ -1,0 +1,3 @@
+---
+# vars file for aws_provision
+count_slaves: "2"

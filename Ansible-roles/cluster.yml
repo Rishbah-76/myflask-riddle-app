@@ -1,0 +1,3 @@
+- hosts: [master,slaves]
+  roles:
+  - role: "cluster_setup"

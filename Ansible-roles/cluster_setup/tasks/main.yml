@@ -1,0 +1,110 @@
+---
+# tasks file for cluster_setup
+- name: Configuring kubernetes Yum Repository
+  yum_repository:
+          name: kubernetes
+          description: Configure the kubernetes repo
+          baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-$basearch
+          gpgcheck: yes
+          enabled: yes
+          gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+- name: Install docker
+  package:
+    name: 'docker'
+    state: present
+
+
+- name: Start docker
+  service:
+          name: 'docker'
+          state: started
+          enabled: yes
+
+
+- name: install Kubeadm,Kubelet,Kubectl.
+  package:
+          name:
+                  - "kubeadm"
+                  - "kubelet"
+                  - "kubectl"
+          state: present
+          disable_excludes: "kubernetes"
+
+- name: Start kubelet 
+  service:  
+          name: 'kubelet' 
+          state: started 
+          enabled: yes
+
+- name: Pull images by kubeadm for pods
+  command: kubeadm config images pull
+  when: inventory_hostname in groups["master"]
+
+- name: Changing Docker Cgroup
+  copy:
+          src: "daemon.json"
+          dest: "/etc/docker/daemon.json"
+  
+- name: Restarting docker 
+  service: 
+    name: 'docker' 
+    state: restarted
+
+- name: Install ip-route 
+  package: 
+    name: 'iproute-tc' 
+    state: present
+
+- name: Configure master using kubeadm
+  shell: kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=NumCPU --ignore-preflight-errors=Mem >> kubeadm_init_log.txt
+  args:
+    chdir: /root/
+    creates: kubeadm_init_log.txt     
+  when: inventory_hostname in groups["master"]
+ 
+- name: Copy the admin files and changing ownership 
+  shell: "{{  item  }}"
+  with_items: 
+    - mkdir -p $HOME/.kube 
+    - cp -i /etc/kubernetes/admin.conf $HOME/.kube/config 
+    - chown $(id -u):$(id -g) $HOME/.kube/config   
+  when: inventory_hostname in groups["master"]
+
+- name: Create flannel overlay network
+  shell: kubectl apply  -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  ignore_errors: yes 
+
+- name: making conf file for netbridge
+  copy:
+          src: k8s.conf
+          dest: /etc/sysctl.d/k8s.conf
+  when: inventory_hostname in groups["slaves"]
+
+- name: sysctl 
+  command: "sysctl --system"
+  when: inventory_hostname in groups["slaves"]
+
+- name: getting token
+  shell: kubeadm token create --print-join-command
+  register: token 
+  when: inventory_hostname in groups["master"]
+
+- name: copying token to localhost
+  local_action:
+    module: copy
+    content: "{{ token.stdout }}"
+    dest: "/arth_ansible/task19/slave_token.sh"
+  when: inventory_hostname in groups["master"] 
+
+- name: copying token to slave
+  copy:
+      src: slave_token.sh
+      dest: /root
+      mode: 0777
+  when: inventory_hostname in groups["slaves"] 
+
+- name: running token file
+  command: "sh /root/slave_token.sh"  
+  when: inventory_hostname in groups["slaves"] 
+
