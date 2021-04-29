@@ -4,43 +4,43 @@
         region: ap-south-1
         image: ami-0bcf5425cdc1d8a85
         instance_type: t2.micro
-        vpc_subnet_id: subnet-a9cdc4c1
-        group_id: sg-0864bc0df6632857b
-        key_name: trial4
+        vpc_subnet_id: <<" Enter your own Subnet" >>
+        group_id: <<"Enter your own Sg" >>
+        key_name: << "Give the Name of your .pem " >>
 	instance_tags:
-                Name: MasterNode
-        aws_access_key:  AKIARHABAWTWXZ4535GL 
-        aws_secret_key: +mihLw5EEFW/WVvb2nuOtlIGGjGNXtQnD20oOs0s
+	    Name: MasterNode
+        aws_access_key: <<" Give your Own Access_key" >> 
+        aws_secret_key: <<"Enter your own Secret_Key" >>
         assign_public_ip: yes
         wait: yes
   register: x1
 - blockinfile:
-        path: "/root/ip.txt"
+        path: "<< Enter you own Inventory path >>"
         marker: ""
         block: |
                    [master]
-                   {{ item.public_ip }} ansible_user=ec2-user ansible_ssh_private_key_file=/trial4.pem ansible_connection=ssh
+                   {{ item.public_ip }} ansible_user=ec2-user ansible_ssh_private_key_file= << "Give the Name of your .pem with Path " >> ansible_connection=ssh
   loop: "{{ x1.instances }}"
 - ec2:
         region: ap-south-1
         image: ami-0bcf5425cdc1d8a85
         instance_type: t2.micro
-        vpc_subnet_id: subnet-a9cdc4c1
-        group_id: sg-0864bc0df6632857b
-        key_name: trial4
+        vpc_subnet_id: <<" Enter your own Subnet" >>
+        group_id: <<"Enter your own Sg" >>
+        key_name: << "Give the Name of your .pem " >>
         instance_tags:
-                Name: workerNode
-        aws_access_key: AKIARHABAWTWXZ4535GL
-        aws_secret_key: +mihLw5EEFW/WVvb2nuOtlIGGjGNXtQnD20oOs0s
+            Name: workerNode
+        aws_access_key: <<" Give your Own Access_key" >> 
+        aws_secret_key: <<"Enter your own Secret_Key" >>
         assign_public_ip: yes
         wait: yes
         count: "{{ count_slaves }}" 
   register: x2
 - blockinfile:
-        path: "/root/ip.txt"
+        path: ""
         marker: ""
         block: |
                    [slaves]
-                   {{ item.public_ip }} ansible_user=ec2-user ansible_ssh_private_key_file=/trial4.pem ansible_connection=ssh
+                   {{ item.public_ip }} ansible_user=ec2-user ansible_ssh_private_key_file=<< "Give the Name of your .pem with Path " >> ansible_connection=ssh
   loop: "{{ x2.instances }}"
 
