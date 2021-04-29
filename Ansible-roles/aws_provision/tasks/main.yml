@@ -7,8 +7,6 @@
         vpc_subnet_id: <<" Enter your own Subnet" >>
         group_id: <<"Enter your own Sg" >>
         key_name: << "Give the Name of your .pem " >>
-	instance_tags:
-	    Name: MasterNode
         aws_access_key: <<" Give your Own Access_key" >> 
         aws_secret_key: <<"Enter your own Secret_Key" >>
         assign_public_ip: yes
